@@ -1,3 +1,5 @@
+// https://www.andronio.me/2017/09/02/pdfkit-tables/
+
 'use strict';
 
 const PDFDocument = require('pdfkit');
@@ -22,7 +24,7 @@ class PDFDocumentWithTables extends PDFDocument {
         }
 
         const columnCount = table.headers.length;
-        const columnSpacing = options.columnSpacing || 15;
+        const columnSpacing = options.columnSpacing || 5;
         const rowSpacing = options.rowSpacing || 5;
         const usableWidth = options.width || (this.page.width - this.page.margins.left - this.page.margins.right);
 
