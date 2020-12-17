@@ -10,6 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "colors": "^1.4.0",
     "dotenv": "^8.2.0",
     "follow-redirects": "^1.13.1",
     "pdfkit": "^0.11.0",
