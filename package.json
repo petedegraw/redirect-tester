@@ -13,6 +13,7 @@
     "colors": "^1.4.0",
     "dotenv": "^8.2.0",
     "follow-redirects": "^1.13.1",
+    "inquirer": "^7.3.3",
     "pdfkit": "^0.11.0",
     "read-excel-file": "^4.1.0"
   }
