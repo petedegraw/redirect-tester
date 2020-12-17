@@ -6,19 +6,20 @@ const PDFDocument = require('./utils/pdfkit-tables');
 // Create a document
 const doc = new PDFDocument({width: 1800, margin: 50});
     
-// Pipe its output somewhere, like to a file or HTTP response
-// See below for browser usage
-doc.pipe(fs.createWriteStream('./data/reports/dmo-817--prev.pdf'));
-
-doc.font('Helvetica')
-    .fontSize(14)
-    .text('DMO-817 Redirect Tests -- Preview')
-    .moveDown(.5);
 
 var d = new Date();
 
+// Pipe its output somewhere, like to a file or HTTP response
+// See below for browser usage
+doc.pipe(fs.createWriteStream('./data/reports/dmo-863--prod.pdf'));
+
+doc.font('Helvetica')
+    .fontSize(14)
+    .text('DMO-863 Redirect Tests -- Production')
+    .moveDown(.5);
+
 doc.fontSize(10)
-    .text('Date: ' + d.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }))
+    .text('Tested on ' + d.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }) + ' by Pete DeGraw')
     .moveDown(.5);
 
 let fails = 0;
@@ -34,12 +35,12 @@ let table0 = {
 
 let redirectReport = [];
 let count = 0;
-xlsxFile('./data/redirects/dmo-817.xlsx').then((rows) => {
+xlsxFile('./data/redirects/dmo-863.xlsx').then((rows) => {
     rows.forEach((col, index)=>{
         if (index > 0) {
-            let from = 'http://www.preview-dcm.equinix.co.jp' + col[0];
-            let to = 'http://www.preview-dcm.equinix.co.jp' + col[1];
-            http.get(from, response => {
+            let from = 'https://www.equinix.co.jp' + col[0];
+            let to = 'https://www.equinix.co.jp' + col[1];
+            https.get(from, response => {
                 let url = response.responseUrl;
                 let result = url === to;
                 let report = [
@@ -62,7 +63,7 @@ xlsxFile('./data/redirects/dmo-817.xlsx').then((rows) => {
                     // Finalize PDF file
                     doc.fontSize(12)
                         .font('Helvetica-Bold')
-                        .text('Test Results: ' + fails > 0 ? 'FAIL' : 'PASS')
+                        .text(fails > 0 ? 'Result: FAIL' : 'Result: PASS')
                         .moveDown(0.5);
                     if (result === true) {
                         doc.image('media/qcpassed.png', 520, 25, {
