@@ -27,12 +27,12 @@ Requirements
 - all URLs should be the pathname only
 - remove any spaces at the end or beginning of the URL
 
-![Spreadsheet format](media/readme/spreadsheet-redirect-format.png)
+![Spreadsheet format](media/readme/spreadsheet-redirect-format.png?raw=true)
 
 ### Generating a report
 
 1. From the command line, run `npm start`
 2. Select the input file
-![input file](media/readme/select-input-file.png)
+![input file](media/readme/select-input-file.png?raw=true)
 3. Select the environment
-![input file](media/readme/select-environment.png)
+![input file](media/readme/select-environment.png?raw=true)
