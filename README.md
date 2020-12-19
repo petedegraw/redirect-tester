@@ -27,14 +27,16 @@ Requirements
 - all URLs should be the pathname only
 - remove any spaces at the end or beginning of the URL
 
-![spreadsheet screenshot](https://github.com/petedegraw/redirect-tester/blob/main/media/readme/spreadsheet-redirect-format.png?raw=true)
+![spreadsheet screenshot](media/readme/spreadsheet-redirect-format.png)
 
 ### Generating a report
 
 1. From the command line, run `npm start`
 
 2. Select the input file
+
 ![select file](media/readme/select-input-file.png)
 
 3. Select the environment
+
 ![select environment](media/readme/select-environment.png)
