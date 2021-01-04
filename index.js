@@ -21,6 +21,11 @@ let domains = process.env.domains.split(',');
 let d = new Date();
 let d_file = new Date().toISOString().replace(/:/gi, '-').split('.')[0];
 
+function parseHrtimeToSeconds(hrtime) {
+    var seconds = (hrtime[0] + hrtime[1] / 1e9).toFixed(3);
+    return seconds;
+}
+
 fs.readdir(process.env.redirects_path, function (err, files) {
     //handling error
     if (err) {
@@ -50,7 +55,7 @@ fs.readdir(process.env.redirects_path, function (err, files) {
         ])
         .then((answers) => {
             // Create a document
-            const doc = new PDFDocument({ width: 1800, margin: 50 });
+            const doc = new PDFDocument({ width: 1800, margin: 50, bufferPages: true });
             const redirects_file = process.env.redirects_path + '/' + answers.redirect_file;
             const report_file =
                 process.env.reports_path +
@@ -94,6 +99,7 @@ fs.readdir(process.env.redirects_path, function (err, files) {
                     '-'.grey,
                     domain
                 );
+                let elapsedSeconds = parseHrtimeToSeconds(process.hrtime(startTime));
                 if (table0.rows.length === domains.length * (rowsCount - 1)) {
                     console.log('finalizing pdf'.grey);
                     // console.table(redirectReport);
@@ -119,6 +125,8 @@ fs.readdir(process.env.redirects_path, function (err, files) {
                         prepareHeader: () => doc.font('Helvetica-Bold'),
                         prepareRow: (row, i) => doc.font('Helvetica').fontSize(8),
                     });
+                    doc.switchToPage(0);
+                    doc.fontSize(8).text(`Duration: ${elapsedSeconds} seconds`, 50, 30);
                     doc.end();
                     exec('open ' + report_file, (error, stdout, stderr) => {
                         if (error) {
@@ -134,6 +142,7 @@ fs.readdir(process.env.redirects_path, function (err, files) {
                 }
             }
             console.log('testing redirects'.gray);
+            let startTime = process.hrtime();
             domains.forEach((domain) => {
                 // console.log('...'.green + domain.green);
                 xlsxFile(redirects_file).then((rows) => {
