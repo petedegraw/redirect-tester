@@ -37,6 +37,7 @@ const requestURL = async (from, to) => {
                 url = response.responseUrl;
                 let result = url === to;
                 report = [from, to, url, result ? 'PASSED' : 'FAILED'];
+                // console.log(response);
                 if (url.length > 0) {
                     resolve(report);
                 } else {
@@ -172,20 +173,21 @@ fs.readdir(process.env.redirects_path, function (err, files) {
             }
             console.log('testing redirects'.gray);
             let startTime = process.hrtime();
-            xlsxFile(redirects_file)
-                .then((xlsxData) => {
-                    rowsCount = xlsxData.length - 1;
-                    for (let i = 0; i < domains.length; i++) {
-                        let domain = domains[i];
-                        for (let index = 0; index < xlsxData.length; index++) {
-                            let col = xlsxData[index];
-                            // skip the header row in the domain spreadsheet file
-                            if (index > 0) {
-                                let from = domain + col[0];
-                                let to = domain + col[1];
-                                // make https request
-                                requestURL(from, to)
-                                    .then((data) => {
+            xlsxFile(redirects_file).then((xlsxData) => {
+                rowsCount = xlsxData.length - 1;
+                async function testDomains() {
+                    for (const [i, domain] of domains.entries()) {
+                        // console.log(domain);
+                        async function testUrls() {
+                            for (const [index, data] of xlsxData.entries()) {
+                                let col = xlsxData[index];
+                                // skip the header row in the domain spreadsheet file
+                                if (index > 0) {
+                                    let from = domain + col[0];
+                                    let to = domain + col[1];
+                                    // console.log(from);
+                                    // make https request
+                                    requestURL(from, to).then((data) => {
                                         if (data.result === false) {
                                             fails++;
                                         }
@@ -201,17 +203,17 @@ fs.readdir(process.env.redirects_path, function (err, files) {
                                             // finalize PDF
                                             finalizePdf(domain);
                                         }
-                                    })
-                                    .catch(() => {
-                                        console.log('error in requestURL()');
                                     });
+                                }
                             }
+                            // console.log('URLs finished');
                         }
+                        testUrls();
                     }
-                })
-                .catch(() => {
-                    console.log('error in xlsxFile()');
-                });
+                    // console.log('DOMAINS finished');
+                }
+                testDomains();
+            });
         }); // end inquirer
 });
 
