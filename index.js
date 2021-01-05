@@ -21,10 +21,33 @@ let domains = process.env.domains.split(',');
 let d = new Date();
 let d_file = new Date().toISOString().replace(/:/gi, '-').split('.')[0];
 
+// !script timer
 function parseHrtimeToSeconds(hrtime) {
     var seconds = (hrtime[0] + hrtime[1] / 1e9).toFixed(3);
     return seconds;
 }
+
+// !requestURL
+const requestURL = async (from, to) => {
+    return new Promise((resolve, reject) => {
+        let url, report;
+        https
+            .get(from, (response) => {
+                console.log('      testing -'.gray, from.gray);
+                url = response.responseUrl;
+                let result = url === to;
+                report = [from, to, url, result ? 'PASSED' : 'FAILED'];
+                if (url.length > 0) {
+                    resolve(report);
+                } else {
+                    reject();
+                }
+            })
+            .on('error', (err) => {
+                console.error(err);
+            });
+    });
+};
 
 fs.readdir(process.env.redirects_path, function (err, files) {
     //handling error
@@ -100,7 +123,7 @@ fs.readdir(process.env.redirects_path, function (err, files) {
                     domain
                 );
                 let elapsedSeconds = parseHrtimeToSeconds(process.hrtime(startTime));
-                if (table0.rows.length === domains.length * (rowsCount - 1)) {
+                if (table0.rows.length === domains.length * rowsCount) {
                     console.log('finalizing pdf'.grey);
                     // console.table(redirectReport);
                     // Finalize PDF file
@@ -126,7 +149,13 @@ fs.readdir(process.env.redirects_path, function (err, files) {
                         prepareRow: (row, i) => doc.font('Helvetica').fontSize(8),
                     });
                     doc.switchToPage(0);
-                    doc.fontSize(8).text(`Duration: ${elapsedSeconds} seconds`, 50, 30);
+                    doc.fontSize(8).text(
+                        `Tested ${rowsCount * domains.length} URLs in ${elapsedSeconds} seconds (${(
+                            elapsedSeconds / rowsCount
+                        ).toFixed(3)} seconds per URL)`,
+                        50,
+                        30
+                    );
                     doc.end();
                     exec('open ' + report_file, (error, stdout, stderr) => {
                         if (error) {
@@ -143,49 +172,46 @@ fs.readdir(process.env.redirects_path, function (err, files) {
             }
             console.log('testing redirects'.gray);
             let startTime = process.hrtime();
-            domains.forEach((domain) => {
-                // console.log('...'.green + domain.green);
-                xlsxFile(redirects_file).then((rows) => {
-                    rowsCount = rows.length;
-                    rows.forEach((col, index) => {
-                        // skip the "to" and "from" row
-                        if (index > 0) {
-                            let from = domain + col[0];
-                            let to = domain + col[1];
-                            https
-                                .get(from, (response) => {
-                                    let url = response.responseUrl;
-                                    let result = url === to;
-                                    let report = [from, to, url, result ? 'PASSED' : 'FAILED'];
-                                    // redirectReport.push(report);
-                                    if (result === false) {
-                                        fails++;
-                                    }
-                                    // publish the results
-                                    table0.rows.push(report);
-                                    urlCount++;
-                                    // checks
-                                    // console.log(count, urlCount, rows.length - 1);
-                                    // console.log('domains:', count, domains.length - 1);
-                                    // console.log('build:', table0.rows.length, domains.length * (rowsCount - 1))
-                                    // console.log('fails', fails);
-                                    // conclude all rows
-                                    if (urlCount === rows.length - 1) {
-                                        // conclude domain
-                                        count++;
-                                        // reset urlCounter
-                                        urlCount = 0;
-                                        // finalize PDF
-                                        finalizePdf(domain);
-                                    }
-                                })
-                                .on('error', (err) => {
-                                    console.error(err);
-                                });
-                        } // end skipping "to" and "from" row
-                    });
+            xlsxFile(redirects_file)
+                .then((xlsxData) => {
+                    rowsCount = xlsxData.length - 1;
+                    for (let i = 0; i < domains.length; i++) {
+                        let domain = domains[i];
+                        for (let index = 0; index < xlsxData.length; index++) {
+                            let col = xlsxData[index];
+                            // skip the header row in the domain spreadsheet file
+                            if (index > 0) {
+                                let from = domain + col[0];
+                                let to = domain + col[1];
+                                // make https request
+                                requestURL(from, to)
+                                    .then((data) => {
+                                        if (data.result === false) {
+                                            fails++;
+                                        }
+                                        // add the results to the table
+                                        table0.rows.push(data);
+                                        urlCount++;
+                                        // conclude all rows
+                                        if (urlCount === rowsCount) {
+                                            // conclude domain
+                                            count++;
+                                            // reset urlCounter
+                                            urlCount = 0;
+                                            // finalize PDF
+                                            finalizePdf(domain);
+                                        }
+                                    })
+                                    .catch(() => {
+                                        console.log('error in requestURL()');
+                                    });
+                            }
+                        }
+                    }
+                })
+                .catch(() => {
+                    console.log('error in xlsxFile()');
                 });
-            });
         }); // end inquirer
 });
 
