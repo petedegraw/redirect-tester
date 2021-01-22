@@ -186,7 +186,7 @@ fs.readdir(process.env.redirects_path, function (err, files) {
                                 // make https request
                                 requestURL(from, to)
                                     .then((data) => {
-                                        if (data.result === false) {
+                                        if (data.length === 4 && data[3] === 'FAILED') {
                                             fails++;
                                         }
                                         // add the results to the table
